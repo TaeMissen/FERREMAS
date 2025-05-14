@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos Disponibles</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="img/Ferremas.png">
+</head>
+<body>
+    <header>
+        <h1>Catálogo de Productos</h1>
+        <nav>
+            <ul>
+                <li><a href="/index.html">Inicio</a></li>
+                <li><a href="/gestion.html">Gestión de Productos</a></li>
+                <li><a href="#" onclick="mostrarCarrito()">Carrito de Compras</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h2>Productos Disponibles</h2>
+        <div id="productos"></div>
+    </main>
+
+    <script src="/js/scripts.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/productos')
+                .then(response => response.json())
+                .then(data => {
+                    const productosDiv = document.getElementById('productos');
+                    if (data.length === 0) {
+                        productosDiv.innerHTML = '<p>No hay productos disponibles.</p>';
+                    } else {
+                        data.forEach(producto => {
+                            const productoDiv = document.createElement('div');
+                            productoDiv.classList.add('producto');
+                            productoDiv.innerHTML = `
+                                <h3>${producto.nombre}</h3>
+                                <p>Precio: $${producto.precio.toFixed(2)}</p>
+                                <p>Cantidad: ${producto.cantidad}</p>
+                                <p>Descripción: ${producto.descripcion}</p>
+                                <img src="${producto.imagen}" alt="${producto.nombre}" style="width: 100px;">
+                                <button onclick="agregarAlCarrito(${producto.id}, '${producto.nombre}', ${producto.precio}, 1)">Agregar al Carrito</button>
+                            `;
+                            productosDiv.appendChild(productoDiv);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar los productos:', error);
+                });
+        });
+
+        let carrito = [];
+
+        const agregarAlCarrito = (id, nombre, precio, cantidad) => {
+            const productoExistente = carrito.find(producto => producto.id === id);
+            if (productoExistente) {
+                productoExistente.cantidad += cantidad;
+            } else {
+                carrito.push({ id, nombre, precio, cantidad });
+            }
+            alert(`Agregaste ${cantidad} ${nombre}(s) al carrito`);
+        };
+
+        const mostrarCarrito = () => {
+            let carritoHtml = '<h2>Carrito de Compras</h2>';
+            if (carrito.length === 0) {
+                carritoHtml += '<p>El carrito está vacío.</p>';
+            } else {
+                carritoHtml += '<ul>';
+                carrito.forEach(producto => {
+                    carritoHtml += `<li>${producto.nombre} - Cantidad: ${producto.cantidad} - Precio: $${producto.precio.toFixed(2)}</li>`;
+                });
+                carritoHtml += '</ul>';
+                carritoHtml += '<button onclick="procesarCompra()">Procesar Compra</button>';
+            }
+            const productosDiv = document.getElementById('productos');
+            productosDiv.innerHTML = carritoHtml;
+        };
+
+        const procesarCompra = () => {
+            const montoTotal = carrito.reduce((total, producto) => total + producto.cantidad * producto.precio, 0);
+            const ordenCompra = `ORDEN_${Math.floor(Math.random() * 1000000)}`;
+            const sesionId = `SESION_${Math.floor(Math.random() * 1000000)}`;
+
+            console.log('Datos de la compra:', { montoTotal, ordenCompra, sesionId });
+
+            fetch('/webpay_plus/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ monto: montoTotal, ordenCompra, sesionId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Respuesta de la API de pago:', data);
+                if (data.url && data.token) {
+                    // Redirige a la pasarela de pago de Transbank
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = data.url;
+
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'token_ws';
+                    input.value = data.token;
+
+                    form.appendChild(input);
+                    document.body.appendChild(form);
+                    form.submit();
+                } else {
+                    alert('Error al procesar el pago');
+                }
+            })
+            .catch(error => {
+                console.error('Error al procesar el pago:', error);
+            });
+        };
+    </script>
+</body>
+</html>
