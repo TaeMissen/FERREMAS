@@ -1,0 +1,41 @@
+SUCURSAL (Cambiar "###") (Ejecutar En CMD)
+
+Obtener Productos:
+curl http://localhost:3001/productos
+_________________________________________________________________
+
+Envía productos desde la sucursal a la casa matriz:
+curl -X POST http://localhost:3001/productos/enviar -H "Content-Type: application/json" -d "{\"id\":1, \"cantidad\":10}"
+_______________________________________________________________________________
+
+Agregar Nuevo Producto:
+curl -X POST http://localhost:3001/productos -H "Content-Type: application/json" -d "{\"nombre\":\"Tornillo\", \"cantidad\":100}"
+___________________________________________________________________________________________
+
+Eliminar Producto:
+
+curl -X DELETE http://localhost:3001/productos/3
+___________________________________________________________________
+
+
+
+
+
+Casa Matriz (Cambiar "###") (Ejecutar En CMD)
+
+Obtener Productos:
+curl http://localhost:3000/productos
+_________________________________________________________________
+
+Envía productos desde la Casa a la Sucursal:
+curl -X POST http://localhost:3000/productos/enviar -H "Content-Type: application/json" -d "{\"id\":4, \"cantidad\":30}"
+_______________________________________________________________________________
+
+Agregar Nuevo Producto:
+curl -X POST http://localhost:3000/productos -H "Content-Type: application/json" -d "{\"nombre\":\"Tornillo\", \"cantidad\":100}"
+___________________________________________________________________________________________
+
+Eliminar Producto:
+
+curl -X DELETE http://localhost:3000/productos/9
+___________________________________________________________________
